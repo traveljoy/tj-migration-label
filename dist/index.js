@@ -1,6 +1,25 @@
 require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 629:
+/***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
+
+"use strict";
+__nccwpck_require__.r(__webpack_exports__);
+/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
+/* harmony export */   "REPO_OWNER": () => (/* binding */ REPO_OWNER),
+/* harmony export */   "GITHUB_TOKEN": () => (/* binding */ GITHUB_TOKEN),
+/* harmony export */   "LABEL_NAME": () => (/* binding */ LABEL_NAME),
+/* harmony export */   "LABEL_DEFAULT_NAME": () => (/* binding */ LABEL_DEFAULT_NAME)
+/* harmony export */ });
+const REPO_OWNER = "owner";
+const GITHUB_TOKEN = "token";
+const LABEL_NAME = "label-name";
+const LABEL_DEFAULT_NAME = "migration";
+
+
+/***/ }),
+
 /***/ 351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -1555,19 +1574,10 @@ exports.debug = debug; // for test
 
 /***/ }),
 
-/***/ 258:
+/***/ 758:
 /***/ ((module) => {
 
-let wait = function (milliseconds) {
-  return new Promise((resolve) => {
-    if (typeof milliseconds !== 'number') {
-      throw new Error('milliseconds not a number');
-    }
-    setTimeout(() => resolve("done!"), milliseconds)
-  });
-};
-
-module.exports = wait;
+module.exports = eval("require")("@actions/github");
 
 
 /***/ }),
@@ -1685,31 +1695,147 @@ module.exports = require("util");
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__nccwpck_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__nccwpck_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
 (() => {
+"use strict";
+// ESM COMPAT FLAG
+__nccwpck_require__.r(__webpack_exports__);
+
+;// CONCATENATED MODULE: ./pull_request.js
 const core = __nccwpck_require__(186);
-const wait = __nccwpck_require__(258);
+const github = __nccwpck_require__(758);
+
+function getPrNumber() {
+  const pullRequest = github.context.payload.pull_request;
+  if (!pullRequest) {
+    return undefined;
+  }
+
+  return pullRequest.number;
+}
+
+async function getChangedFiles(client, prNumber, owner) {
+  const fileOptionList = client.rest.pulls.listFiles.endpoint.merge({
+    owner: owner,
+    repo: github.context.repo.repo,
+    pull_number: prNumber,
+  });
+
+  const listFilesResponse = await client.paginate(fileOptionList);
+  const changedFiles = listFilesResponse.map((f) => f.filename);
+
+  return changedFiles;
+}
+
+async function addMigrationLabel(
+  client,
+  prNumber,
+  owner,
+  labelName,
+  existLabels
+) {
+  core.info(`${labelName} will be added`);
+  core.info("Adding migration labels..");
+
+  existLabels.push(labelName);
+
+  return await client.rest.issues.addLabels({
+    owner: owner,
+    repo: github.context.repo.repo,
+    issue_number: prNumber,
+    labels: existLabels,
+  });
+}
+
+;// CONCATENATED MODULE: ./index.js
+const index_core = __nccwpck_require__(186);
+const constants = __nccwpck_require__(629);
+const index_github = __nccwpck_require__(758);
 
 
 // most @actions toolkit packages have async methods
 async function run() {
   try {
-    const ms = core.getInput('milliseconds');
-    core.info(`Waiting ${ms} milliseconds ...`);
+    console.log("Running");
+    const ownerInput = index_core.getInput(constants.REPO_OWNER);
+    const owner = ownerInput !== "" ? ownerInput : index_github.context.repo.owner;
 
-    core.debug((new Date()).toTimeString()); // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
-    await wait(parseInt(ms));
-    core.info((new Date()).toTimeString());
+    const labelNameInput = index_core.getInput(constants.LABEL_NAME);
+    const labelName =
+      labelNameInput !== "" ? labelNameInput : constants.LABEL_DEFAULT_NAME;
 
-    core.setOutput('time', new Date().toTimeString());
+    const token = index_core.getInput(constants.GITHUB_TOKEN, { required: true });
+    const client = index_github.getOctokit(token);
+
+    const prNumber = getPrNumber();
+
+    if (!prNumber) {
+      index_core.error("Failed to get pull request information!");
+      throw new Error("failed to get pull request");
+    }
+
+    const { data: pullRequest } = await client.rest.pulls.get({
+      owner: owner === "" ? owner : index_github.context.repo.owner,
+      repo: index_github.context.repo.repo,
+      pull_number: prNumber,
+    });
+
+    const changedFiles = await getChangedFiles(client, prNumber, owner);
+
+    const migrationRe = /\bmigrate\b/g;
+    const existLabels = pullRequest.labels.map((label) =>
+      label.name ? label.name : ""
+    );
+
+    for (const changedFile of changedFiles) {
+      console.log(`Changed file found: ${changedFile}`);
+      if (changedFile.match(migrationRe)) {
+        await addMigrationLabel(
+          client,
+          prNumber,
+          owner,
+          labelName,
+          existLabels
+        );
+        break;
+      }
+    }
   } catch (error) {
-    core.setFailed(error.message);
+    index_core.setFailed(error.message);
   }
 }
 
