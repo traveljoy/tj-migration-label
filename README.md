@@ -8,7 +8,7 @@ Use this template to bootstrap the creation of a JavaScript action.:rocket:
 
 This template includes tests, linting, a validation workflow, publishing, and versioning guidance.
 
-If you are new, there's also a simpler introduction.  See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
+If you are new, there's also a simpler introduction. See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
 
 ## Create an action from this template
 
@@ -68,7 +68,7 @@ See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/R
 
 GitHub Actions will run the entry point from the action.yml. Packaging assembles the code into one file that can be checked in to Git, enabling fast and reliable execution and preventing the need to check in node_modules.
 
-Actions are run from GitHub repos.  Packaging the action will create a packaged action in the dist folder.
+Actions are run from GitHub repos. Packaging the action will create a packaged action in the dist folder.
 
 Run prepare
 
@@ -108,9 +108,19 @@ See the [versioning documentation](https://github.com/actions/toolkit/blob/maste
 You can now consume the action by referencing the v1 branch
 
 ```yaml
-uses: actions/javascript-action@v1
+uses: traveljoy/tj-migration-label@v3
 with:
-  milliseconds: 1000
+  token: "${{ secrets.GITHUB_TOKEN }}"
 ```
 
 See the [actions tab](https://github.com/actions/javascript-action/actions) for runs of this action! :rocket:
+
+## Development
+
+When iterating on features, you can point to the main branch for running the action.
+
+```yaml
+uses: traveljoy/tj-migration-label@main
+with:
+  token: "${{ secrets.GITHUB_TOKEN }}"
+```
